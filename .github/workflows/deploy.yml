@@ -12,36 +12,56 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: EC2_host
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "backend,frontend,docker-compose.yml,docker-compose.prod.yml"
-          target: /opt/items-crud
-          overwrite: true
-          rm: false
+      - name: Deploy over SSH
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER_NAME: ${{ secrets.DEPLOY_USER }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
 
-      - name: Build and restart containers
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -euo pipefail
-            cd /opt/items-crud
-            sudo systemctl stop nginx || true
-            sudo systemctl disable nginx || true
-            sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-            sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
-            sleep 2
-            curl -fsS http://127.0.0.1/api/health
-            echo "Deploy OK"
+          if [ -z "${HOST}" ]; then
+            echo "DEPLOY_HOST secret is empty"
+            exit 1
+          fi
+          if [ -z "${USER_NAME}" ]; then
+            echo "DEPLOY_USER secret is empty"
+            exit 1
+          fi
+          if [ -z "${SSH_KEY}" ]; then
+            echo "DEPLOY_SSH_KEY secret is empty"
+            exit 1
+          fi
+
+          echo "Deploying to ${USER_NAME}@${HOST}"
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude 'data' \
+            --exclude 'dist' \
+            --exclude '.deploy' \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
+            ./ "${USER_NAME}@${HOST}:/opt/items-crud/"
+
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${USER_NAME}@${HOST}" bash -s <<'EOF'
+          set -euo pipefail
+          cd /opt/items-crud
+          sudo systemctl stop nginx || true
+          sudo systemctl disable nginx || true
+          sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+          sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+          sleep 2
+          curl -fsS http://127.0.0.1/api/health
+          echo
+          echo "Deploy OK"
+          EOF
