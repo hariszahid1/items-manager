@@ -72,3 +72,4 @@ npm run dev
 ```
 
 UI runs at http://localhost:5173 (proxies `/api` to the backend).
+# items-manager
