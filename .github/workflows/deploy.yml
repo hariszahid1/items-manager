@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "backend,frontend,docker-compose.yml,docker-compose.prod.yml"
+          target: /opt/items-crud
+          overwrite: true
+          rm: false
+
+      - name: Build and restart containers
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/items-crud
+            sudo systemctl stop nginx || true
+            sudo systemctl disable nginx || true
+            sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+            sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+            sleep 2
+            curl -fsS http://127.0.0.1/api/health
+            echo "Deploy OK"
