@@ -94,7 +94,7 @@ export default function App() {
   return (
     <div className="page">
       <header className="hero">
-        <p className="eyebrow">Full-stack CRUD</p>
+        <p className="eyebrow">Full-stack CRUDs/p>
         <h1>Items Manager</h1>
         <p className="subtitle">
           Create, read, update, and delete items with a React frontend and Node.js API.
