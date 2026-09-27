@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
@@ -12,8 +13,26 @@ const PORT = process.env.PORT || 4000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../../data');
 const DATA_FILE = path.join(DATA_DIR, 'items.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-change-me';
 const CORS_ORIGIN = process.env.CORS_ORIGIN || false;
+
+function resolveJwtSecret() {
+  const secret = process.env.JWT_SECRET || '';
+  const insecureDefaults = new Set([
+    '',
+    'dev-only-change-me',
+    'change-me-in-production',
+    'secret',
+    'jwt_secret',
+  ]);
+  if (insecureDefaults.has(secret) || secret.length < 32) {
+    throw new Error(
+      'JWT_SECRET must be set to a strong value of at least 32 characters'
+    );
+  }
+  return secret;
+}
+
+const JWT_SECRET = resolveJwtSecret();
 
 app.use(helmet());
 app.use(
@@ -23,6 +42,24 @@ app.use(
   })
 );
 app.use(express.json({ limit: '32kb' }));
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many auth attempts, try again later' },
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', apiLimiter);
+app.use('/api/auth/', authLimiter);
 
 function ensureDataFile(filePath, fallback) {
   if (!fs.existsSync(DATA_DIR)) {
@@ -62,6 +99,7 @@ function writeUsers(users) {
 function signToken(user) {
   return jwt.sign({ sub: user.id, username: user.username }, JWT_SECRET, {
     expiresIn: '7d',
+    algorithm: 'HS256',
   });
 }
 
@@ -73,7 +111,7 @@ function authRequired(req, res, next) {
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] });
     req.user = { id: payload.sub, username: payload.username };
     return next();
   } catch {

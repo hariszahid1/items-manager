@@ -35,7 +35,12 @@ Auth endpoints and item routes require header `X-Requested-With: XMLHttpRequest`
 | PUT | `/api/items/:id` | Update your item |
 | DELETE | `/api/items/:id` | Delete your item |
 
-Set `JWT_SECRET` in production (compose env / server).
+Set a strong `JWT_SECRET` (32+ chars) before running:
+
+```bash
+cp .env.example .env
+# edit .env — or: echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
+```
 
 ## Run locally with Docker
 

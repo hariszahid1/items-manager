@@ -13,6 +13,7 @@ rsync -az --delete \
   --exclude .git \
   --exclude data \
   --exclude dist \
+  --exclude .env \
   -e "ssh -i ${KEY} -o StrictHostKeyChecking=accept-new" \
   "${ROOT}/" \
   "${USER_NAME}@${HOST}:${APP_DIR}/"
@@ -22,6 +23,9 @@ set -euo pipefail
 cd ${APP_DIR}
 sudo systemctl stop nginx || true
 sudo docker rm -f items-backend items-frontend 2>/dev/null || true
+if [ ! -f .env ] || ! grep -qE '^JWT_SECRET=.+' .env; then
+  echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
+fi
 sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 sleep 2
 curl -fsS http://127.0.0.1/api/health
