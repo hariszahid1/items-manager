@@ -1,0 +1,60 @@
+name: Strix Security Scan
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Nightly standard scan (UTC)
+    - cron: "0 2 * * *"
+
+concurrency:
+  group: strix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  strix-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Strix
+        run: curl -sSL https://strix.ai/install | bash
+
+      - name: Run Strix
+        env:
+          STRIX_LLM: ${{ secrets.STRIX_LLM }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${STRIX_LLM:-}" ]; then
+            echo "STRIX_LLM secret is empty — add it in Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          if [ -z "${LLM_API_KEY:-}" ]; then
+            echo "LLM_API_KEY secret is empty — add it in Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+
+          # Quick on PRs / manual; standard on nightly schedule
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            MODE=standard
+          else
+            MODE=quick
+          fi
+
+          echo "Running Strix in scan-mode=${MODE}"
+          strix -n -t ./ --scan-mode "$MODE"
+
+      - name: Upload Strix results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strix-results
+          path: strix_runs/
+          if-no-files-found: ignore
+          retention-days: 14

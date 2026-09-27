@@ -9,6 +9,7 @@ Simple full-stack CRUD app with a React frontend and Node.js/Express backend, de
 - React + Vite frontend
 - Express REST API
 - Docker Compose + automated GitHub Actions deploy
+- Strix AI security scans on pull requests (and nightly)
 
 ## Project structure
 
@@ -16,7 +17,7 @@ Simple full-stack CRUD app with a React frontend and Node.js/Express backend, de
 backend/     Node.js Express API
 frontend/    React (Vite) UI
 scripts/     Server bootstrap + manual deploy
-.github/     CI/CD deploy workflow
+.github/     CI/CD deploy + Strix security workflows
 ```
 
 ## API
@@ -80,6 +81,27 @@ ssh-copy-id -i ~/.ssh/deploy_key.pub -o IdentityFile=~/Downloads/aws-ssh.pem ubu
 Push to `main`, or run the **Deploy** workflow manually from the Actions tab.
 
 Production URL: http://13.60.99.44/
+
+## Strix security scanning (GitHub Actions)
+
+[Strix](https://github.com/usestrix/strix) runs autonomous AI pentests on every pull request (`quick` mode) and on a nightly schedule (`standard` mode). The workflow fails if vulnerabilities are found (exit code 2).
+
+### Required secrets
+
+In the GitHub repo: **Settings → Secrets and variables → Actions** add:
+
+| Secret | Value |
+|--------|--------|
+| `STRIX_LLM` | Model name (e.g. `openai/gpt-4o` or an OpenRouter model id) |
+| `LLM_API_KEY` | API key for that LLM provider |
+
+### Trigger
+
+- Open or update a pull request (automatic `quick` scan)
+- Actions tab → **Strix Security Scan** → **Run workflow** (manual)
+- Nightly schedule at 02:00 UTC (`standard` scan)
+
+Scan artifacts (if any) upload as `strix-results` from `strix_runs/`.
 
 ### Manual deploy (without GitHub)
 
