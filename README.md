@@ -4,11 +4,11 @@ Simple full-stack CRUD app with a React frontend and Node.js/Express backend, de
 
 ## Features
 
-- Create, read, update, and delete items
+- Create, read, update, and delete items (per-user, JWT auth)
 - Persistent JSON storage (Docker volume)
 - React + Vite frontend
-- Express REST API
-- Docker Compose + automated GitHub Actions deploy
+- Express REST API with ownership checks, CSRF header guard, Helmet
+- Docker Compose (non-root containers) + automated GitHub Actions deploy
 - Strix AI security scans on pull requests (and nightly)
 
 ## Project structure
@@ -22,13 +22,20 @@ scripts/     Server bootstrap + manual deploy
 
 ## API
 
+Auth endpoints and item routes require header `X-Requested-With: XMLHttpRequest`. Item routes also require `Authorization: Bearer <token>`.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/items` | List items |
-| GET | `/api/items/:id` | Get one item |
+| POST | `/api/auth/register` | Create account |
+| POST | `/api/auth/login` | Sign in |
+| GET | `/api/auth/me` | Current user |
+| GET | `/api/items` | List your items |
+| GET | `/api/items/:id` | Get one of your items |
 | POST | `/api/items` | Create item |
-| PUT | `/api/items/:id` | Update item |
-| DELETE | `/api/items/:id` | Delete item |
+| PUT | `/api/items/:id` | Update your item |
+| DELETE | `/api/items/:id` | Delete your item |
+
+Set `JWT_SECRET` in production (compose env / server).
 
 ## Run locally with Docker
 
@@ -92,8 +99,8 @@ In the GitHub repo: **Settings → Secrets and variables → Actions** add:
 
 | Secret | Value |
 |--------|--------|
-| `STRIX_LLM` | Model name (e.g. `openai/gpt-4o` or an OpenRouter model id) |
-| `LLM_API_KEY` | API key for that LLM provider |
+| `STRIX_LLM` | OpenRouter free router: `openrouter/openrouter/free` |
+| `LLM_API_KEY` | OpenRouter API key (`sk-or-...`) from [openrouter.ai/keys](https://openrouter.ai/workspaces/default/keys) |
 
 ### Trigger
 
