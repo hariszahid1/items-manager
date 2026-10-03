@@ -12,3 +12,10 @@ coverage/
 .vite/
 
 .deploy/
+terraform.tfstate
+terraform.tfstate.backup
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/id_rsa.pub

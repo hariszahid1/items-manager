@@ -16,7 +16,8 @@ Simple full-stack CRUD app with a React frontend and Node.js/Express backend, de
 ```
 backend/     Node.js Express API
 frontend/    React (Vite) UI
-scripts/     Server bootstrap + manual deploy
+scripts/     Server bootstrap + SSH + manual deploy
+terraform/   AWS EC2 (Ubuntu) infrastructure
 .github/     CI/CD deploy + Strix security workflows
 ```
 
@@ -93,6 +94,43 @@ ssh-copy-id -i ~/.ssh/deploy_key.pub -o IdentityFile=~/Downloads/aws-ssh.pem ubu
 Push to `main`, or run the **Deploy** workflow manually from the Actions tab.
 
 Production URL: http://13.60.99.44/
+
+### SSH into the existing Ubuntu host
+
+`ssh -i` needs a **local private key file** (`.pem`). The string `amazon/ubuntu/images/hvm-ssd-gp3/ubuntu-resolute-26.04-amd64-server-...` is an **AMI image name**, not a key.
+
+```bash
+chmod 400 ~/Downloads/aws-ssh.pem
+ssh -i ~/Downloads/aws-ssh.pem ubuntu@13.60.99.44
+```
+
+Or: `./scripts/ssh-server.sh`
+
+## Terraform (Week 4 — IaC EC2 + auto-deploy)
+
+Run this **on your laptop**. The EC2 VM does not need `aws configure`.
+
+Creates Ubuntu 22.04, opens SSH from your IP, serves the app on port 80, and on first boot clones the repo and runs Docker Compose (`user_data.sh`).
+
+```bash
+aws configure
+aws sts get-caller-identity
+
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# set key_name (aws ec2 describe-key-pairs), my_ip (curl ifconfig.me → x.x.x.x/32), repo_url
+
+terraform init
+terraform plan
+terraform apply
+
+ssh -i ~/Downloads/aws-ssh.pem ubuntu@$(terraform output -raw public_ip)
+# wait ~3 min, then:  curl http://$(terraform output -raw public_ip)/api/health
+
+terraform destroy   # when finished, so it stops billing
+```
+
+tfsec scans `terraform/` in GitHub Actions. Details: `terraform/README.md`.
 
 ## Strix security scanning (GitHub Actions)
 

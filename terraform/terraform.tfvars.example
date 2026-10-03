@@ -1,0 +1,5 @@
+aws_region    = "eu-north-1"
+instance_type = "t3.micro"
+key_name      = "aws-ssh"
+my_ip         = "39.45.96.136/32"
+repo_url      = "https://github.com/hariszahid1/items-manager.git"

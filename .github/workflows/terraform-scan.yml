@@ -1,0 +1,20 @@
+name: Terraform scan (tfsec)
+
+on:
+  pull_request:
+  push:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-scan.yml"
+  workflow_dispatch:
+
+jobs:
+  tfsec:
+    name: Terraform scan (tfsec)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform
