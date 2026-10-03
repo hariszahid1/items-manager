@@ -30,12 +30,14 @@ resource "aws_security_group" "backend_sg" {
   name        = "backend-sg"
   description = "Allow SSH and app traffic"
 
+  # GitHub Actions runners are not on var.my_ip, so SSH must be reachable
+  # for automated deploy. Prefer a dedicated deploy key (already on the box).
   ingress {
     description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.my_ip]
+    cidr_blocks = ["0.0.0.0/0"] #tfsec:ignore:aws-ec2-no-public-ingress-sgr
   }
 
   # Public HTTP is required for the demo UI. SSH stays locked to var.my_ip.

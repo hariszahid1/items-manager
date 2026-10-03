@@ -26,7 +26,7 @@ jobs:
 
           # Keep the Terraform public IP in the workflow until DEPLOY_HOST
           # secret is updated (GitHub sudo/2FA is required to change secrets).
-          HOST="13.60.252.41"
+          HOST="16.171.21.55"
 
           if [ -z "${HOST}" ]; then
             echo "DEPLOY_HOST secret is empty"
@@ -46,9 +46,10 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts || true
 
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${USER_NAME}@${HOST}" \
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${USER_NAME}@${HOST}" \
             "sudo mkdir -p /opt/items-crud && sudo chown ${USER_NAME}:${USER_NAME} /opt/items-crud"
 
           rsync -az --delete \
@@ -58,10 +59,11 @@ jobs:
             --exclude 'dist' \
             --exclude '.deploy' \
             --exclude '.env' \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
             ./ "${USER_NAME}@${HOST}:/opt/items-crud/"
 
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${USER_NAME}@${HOST}" bash -s <<'EOF'
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
+            "${USER_NAME}@${HOST}" bash -s <<'EOF'
           set -euo pipefail
           cd /opt/items-crud
           if [ ! -f .env ] || ! grep -qE '^JWT_SECRET=.+' .env; then

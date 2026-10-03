@@ -78,21 +78,21 @@ In the GitHub repo: **Settings → Secrets and variables → Actions** add:
 
 | Secret | Value |
 |--------|--------|
-| `DEPLOY_HOST` | `13.60.252.41` |
+| `DEPLOY_HOST` | `16.171.21.55` |
 | `DEPLOY_USER` | `ubuntu` |
 | `DEPLOY_SSH_KEY` | Private key that can SSH as `ubuntu` (contents of your deploy PEM/key) |
 
 Also add the matching **public** key to the server if you use a dedicated deploy key:
 
 ```bash
-ssh-copy-id -i ~/.ssh/deploy_key.pub -o IdentityFile=~/Downloads/aws-ssh.pem ubuntu@13.60.252.41
+ssh-copy-id -i ~/.ssh/deploy_key.pub -o IdentityFile=~/Downloads/aws-ssh.pem ubuntu@16.171.21.55
 ```
 
 ### 3. Trigger deploy
 
 Push to `main`, or run the **Deploy** workflow manually from the Actions tab.
 
-Production URL: http://13.60.252.41/
+Production URL: http://16.171.21.55/
 
 ### SSH into the existing Ubuntu host
 
@@ -100,7 +100,7 @@ Production URL: http://13.60.252.41/
 
 ```bash
 chmod 400 ~/Downloads/aws-ssh.pem
-ssh -i ~/Downloads/aws-ssh.pem ubuntu@13.60.252.41
+ssh -i ~/Downloads/aws-ssh.pem ubuntu@16.171.21.55
 ```
 
 Or: `./scripts/ssh-server.sh`
