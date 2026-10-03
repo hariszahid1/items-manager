@@ -3,7 +3,7 @@
 #   ./scripts/bootstrap-server.sh
 set -euo pipefail
 
-HOST="${DEPLOY_HOST:-13.60.99.44}"
+HOST="${DEPLOY_HOST:-13.60.252.41}"
 USER_NAME="${DEPLOY_USER:-ubuntu}"
 KEY="${DEPLOY_SSH_KEY:-$HOME/Downloads/aws-ssh.pem}"
 APP_DIR="${DEPLOY_PATH:-/opt/items-crud}"

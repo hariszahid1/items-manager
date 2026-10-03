@@ -16,10 +16,11 @@ curl -fsSL https://get.docker.com | sh
 # 2) Let the 'ubuntu' user run docker without sudo
 usermod -aG docker ubuntu
 
-# 3) Clone the repo and start the app
-cd /home/ubuntu
-git clone ${repo_url} app
-cd app
+# 3) Clone the repo where GitHub Actions also deploys
+mkdir -p /opt/items-crud
+git clone ${repo_url} /opt/items-crud
+chown -R ubuntu:ubuntu /opt/items-crud
+cd /opt/items-crud
 
 if [ ! -f .env ] || ! grep -qE '^JWT_SECRET=.+' .env; then
   echo "JWT_SECRET=$(openssl rand -hex 32)" > .env
