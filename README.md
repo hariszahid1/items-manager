@@ -12,7 +12,6 @@ Simple full-stack CRUD app with a React frontend and Node.js/Express backend, de
 - Strix AI security scans on pull requests (and nightly)
 
 ## Project structure
-
 ```
 backend/     Node.js Express API
 frontend/    React (Vite) UI
