@@ -44,12 +44,15 @@ jobs:
           echo "Deploying to ${USER_NAME}@${HOST}"
 
           mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -l -f ~/.ssh/deploy_key >/dev/null
+
+          SSH_OPTS="-i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o BatchMode=yes -o ConnectTimeout=20"
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts || true
 
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            "${USER_NAME}@${HOST}" \
+          echo "Connecting to ${USER_NAME}@${HOST} ..."
+          ssh ${SSH_OPTS} "${USER_NAME}@${HOST}" \
             "sudo mkdir -p /opt/items-crud && sudo chown ${USER_NAME}:${USER_NAME} /opt/items-crud"
 
           rsync -az --delete \
@@ -59,11 +62,10 @@ jobs:
             --exclude 'dist' \
             --exclude '.deploy' \
             --exclude '.env' \
-            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            -e "ssh ${SSH_OPTS}" \
             ./ "${USER_NAME}@${HOST}:/opt/items-crud/"
 
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new \
-            "${USER_NAME}@${HOST}" bash -s <<'EOF'
+          ssh ${SSH_OPTS} "${USER_NAME}@${HOST}" bash -s <<'EOF'
           set -euo pipefail
           cd /opt/items-crud
           if [ ! -f .env ] || ! grep -qE '^JWT_SECRET=.+' .env; then
