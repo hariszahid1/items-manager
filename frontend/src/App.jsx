@@ -159,7 +159,7 @@ export default function App() {
       <div className="page">
         <header className="hero">
           <p className="eyebrow">Full-stack CRUD Application</p>
-          <h1>Items Manager</h1>
+          <h1>Items Manager.</h1>
           <p className="subtitle">Sign in to manage your own items securely.</p>
         </header>
 
@@ -223,7 +223,7 @@ export default function App() {
     <div className="page">
       <header className="hero">
         <p className="eyebrow">Full-stack CRUD Application</p>
-        <h1>Items Manager</h1>
+        <h1>Items Manager..</h1>
         <p className="subtitle">
           Signed in as <strong>{user.username}</strong>. Your items are private to your account.
         </p>
