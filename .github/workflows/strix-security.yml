@@ -25,6 +25,7 @@ jobs:
           working_directory: terraform
 
   strix-scan:
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
