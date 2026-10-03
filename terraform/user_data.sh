@@ -16,6 +16,14 @@ curl -fsSL https://get.docker.com | sh
 # 2) Let the 'ubuntu' user run docker without sudo
 usermod -aG docker ubuntu
 
+# GitHub Actions deploy key (public half of DEPLOY_SSH_KEY)
+install -d -m 700 -o ubuntu -g ubuntu /home/ubuntu/.ssh
+touch /home/ubuntu/.ssh/authorized_keys
+chmod 600 /home/ubuntu/.ssh/authorized_keys
+chown ubuntu:ubuntu /home/ubuntu/.ssh/authorized_keys
+grep -qxF 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBIbpRE2yGqz8omlh+4wX5X2eUCy7S2saw2YsewJC1iw github-actions-items-crud' /home/ubuntu/.ssh/authorized_keys \
+  || echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBIbpRE2yGqz8omlh+4wX5X2eUCy7S2saw2YsewJC1iw github-actions-items-crud' >> /home/ubuntu/.ssh/authorized_keys
+
 # 3) Clone the repo where GitHub Actions also deploys
 mkdir -p /opt/items-crud
 git clone ${repo_url} /opt/items-crud
